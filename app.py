@@ -38,6 +38,10 @@ async def serve_frontend() -> FileResponse:
     """
     return FileResponse("static/index.html")
 
+@app.get("/", response_class=HTMLResponse)
+async def serve_frontend():
+    return FileResponse("static/index.html")
+
 @app.post("/upload_pdfs")
 async def upload_pdfs(pdfs: List[UploadFile] = File(...)) -> dict:
     """
@@ -121,5 +125,5 @@ async def query(
 
     return {"generated_text": generated_text}
 
-if __name__ == "__main__":
-    uvicorn.run("app:app", host="0.0.0.0", port=8000, reload=True)
+# if __name__ == "__main__":
+#     uvicorn.run("app:app", host="0.0.0.0", port=8000, reload=True)
