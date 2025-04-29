@@ -54,10 +54,31 @@ async def upload_pdfs(pdfs: List[UploadFile] = File(...)) -> dict:
     """
     global stored_chunks, stored_embeddings
 
-    pdf_contents = [await pdf.read() for pdf in pdfs]
-    full_text = extract_text_from_pdfs(pdf_contents)
-    stored_chunks = chunk_text(full_text)
-    stored_embeddings = embed_chunks(stored_chunks)
+    # pdf_contents = [await pdf.read() for pdf in pdfs]
+    # full_text = extract_text_from_pdfs(pdf_contents)
+    # stored_chunks = chunk_text(full_text)
+    # stored_embeddings = embed_chunks(stored_chunks)
+
+    # return {"message": "Embeddings created successfully."}
+    try:
+        pdf_contents = [await pdf.read() for pdf in pdfs]
+    except Exception as e:
+        return {"message": f"Failed to read uploaded PDFs: {e}"}
+
+    try:
+        full_text = extract_text_from_pdfs(pdf_contents)
+    except Exception as e:
+        return {"message": f"Failed to extract text from PDFs: {e}"}
+
+    try:
+        stored_chunks = chunk_text(full_text)
+    except Exception as e:
+        return {"message": f"Failed to chunk extracted text: {e}"}
+
+    try:
+        stored_embeddings = embed_chunks(stored_chunks)
+    except Exception as e:
+        return {"message": f"Failed to create embeddings: {e}"}
 
     return {"message": "Embeddings created successfully."}
 
