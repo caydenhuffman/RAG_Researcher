@@ -3,7 +3,7 @@ from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from typing import List
-import uvicorn
+# import uvicorn
 import numpy as np
 
 from rag_utils import extract_text_from_pdfs, chunk_text, embed_chunks, embed_query
