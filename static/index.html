@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RAG Reasearcher</title>
+  <link rel="stylesheet" href="static/style.css">
+  <link rel="icon" type="image/png" href="static/rag.png">
+
+</head>
+<body>
+  <div class="container">
+    <!-- <h1>RAG Reasearcher</h1> -->
+
+    <div style="display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 10px;">
+      <img src="static/rag.png" alt="RAG icon" width="48" height="48" style="border-radius: 8px;">
+      <h1 style="margin: 0;">RAG Researcher</h1>
+    </div>
+    <!-- File Upload -->
+    <label for="pdfUpload">Upload PDFs:</label>
+    <input type="file" id="pdfUpload" accept="application/pdf" multiple>
+
+    <!-- Create Embeddings Button -->
+    <button class="submit-btn" id="createEmbeddingsBtn" onclick="createEmbeddings()">Create Embeddings</button>
+
+    <!-- Embedding Error Message -->
+    <div class="error-message" id="embeddingErrorMessage"></div>
+
+    <!-- Embedding Status Message -->
+    <div class="status-message" id="embeddingStatus"></div>
+
+    <!-- Question Input -->
+    <label for="question">Ask a Question:</label>
+    <input type="text" id="question" placeholder="Type your question here...">
+
+    <!-- Chunk Number Selector -->
+    <label for="chunkCount">Number of Chunks to Include:</label>
+    <input type="number" id="chunkCount" min="1" value="3">
+
+    <!-- Boolean Toggle -->
+    <div class="row">
+      <label for="toggleMode">Return Full Prompt?</label>
+      <select id="toggleMode">
+        <option value="true">Yes</option>
+        <option value="false">No (Only relevant chunks)</option>
+      </select>
+    </div>
+
+    <!-- Generate Text Button -->
+    <button class="submit-btn" id="submitBtn" onclick="generateText()">Generate Text</button>
+
+    <!-- Query Error Message -->
+    <div class="error-message" id="queryErrorMessage"></div>
+
+    <!-- Spinner -->
+    <div class="spinner" id="loadingSpinner"></div>
+
+    <!-- Output Text Box -->
+    <label for="outputText">Generated Prompt:</label>
+    <textarea id="outputText" readonly></textarea>
+
+    <!-- Copy Button -->
+    <button class="copy-btn" onclick="copyToClipboard()">Copy Text</button>
+  </div>
+
+  <script>
+    let lastUploadedFiles = [];
+    let embeddingsCreated = false;
+
+    function copyToClipboard() {
+      const outputText = document.getElementById('outputText');
+      outputText.select();
+      outputText.setSelectionRange(0, 99999);
+
+      try {
+        navigator.clipboard.writeText(outputText.value);
+        alert("Copied to clipboard!");
+      } catch (err) {
+        console.error("Copy failed", err);
+      }
+    }
+
+    async function createEmbeddings() {
+      const spinner = document.getElementById('loadingSpinner');
+      const embeddingErrorMessage = document.getElementById('embeddingErrorMessage');
+      const embeddingStatus = document.getElementById('embeddingStatus');
+      const pdfInput = document.getElementById('pdfUpload');
+
+      if (!pdfInput.files.length) {
+        embeddingErrorMessage.innerText = "Please upload at least one PDF before creating embeddings.";
+        embeddingErrorMessage.style.display = 'block';
+        return;
+      } else {
+        embeddingErrorMessage.style.display = 'none';
+      }
+
+      const currentFiles = Array.from(pdfInput.files).map(file => file.name).sort().join(',');
+      const lastFiles = lastUploadedFiles.sort().join(',');
+
+      if (currentFiles === lastFiles && embeddingsCreated) {
+        embeddingStatus.innerText = "Embeddings already created for these PDFs.";
+        return;
+      }
+
+      spinner.style.display = 'block';
+
+      const formData = new FormData();
+      for (const file of pdfInput.files) {
+        formData.append('pdfs', file);
+      }
+
+      try {
+        const response = await fetch('http://127.0.0.1:8000/upload_pdfs', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to upload PDFs.');
+        }
+
+        alert('Embeddings created successfully!');
+        lastUploadedFiles = Array.from(pdfInput.files).map(file => file.name);
+        embeddingsCreated = true;
+        embeddingStatus.innerText = "Embeddings successfully created.";
+      } catch (error) {
+        console.error(error);
+        alert('Error creating embeddings.');
+      } finally {
+        spinner.style.display = 'none';
+      }
+    }
+
+    async function generateText() {
+      const spinner = document.getElementById('loadingSpinner');
+      const submitBtn = document.getElementById('submitBtn');
+      const queryErrorMessage = document.getElementById('queryErrorMessage');
+      const outputText = document.getElementById('outputText');
+      const question = document.getElementById('question').value.trim();
+      const chunkCount = document.getElementById('chunkCount').value;
+      const toggleMode = document.getElementById('toggleMode').value;
+
+      if (!embeddingsCreated || !question) {
+        queryErrorMessage.innerText = "You must first create embeddings and enter a question.";
+        queryErrorMessage.style.display = 'block';
+        return;
+      } else {
+        queryErrorMessage.style.display = 'none';
+      }
+
+      spinner.style.display = 'block';
+      submitBtn.disabled = true;
+
+      try {
+        const response = await fetch('http://127.0.0.1:8000/query', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: `question=${encodeURIComponent(question)}&chunk_count=${chunkCount}&full_prompt=${toggleMode}`
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to generate text.');
+        }
+
+        const data = await response.json();
+        outputText.value = data.generated_text;
+      } catch (error) {
+        console.error(error);
+        outputText.value = "An error occurred. Please try again.";
+      } finally {
+        spinner.style.display = 'none';
+        submitBtn.disabled = false;
+      }
+    }
+  </script>
+</body>
+</html>
