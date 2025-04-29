@@ -38,9 +38,6 @@ async def serve_frontend() -> FileResponse:
     """
     return FileResponse("static/index.html")
 
-@app.get("/", response_class=HTMLResponse)
-async def serve_frontend():
-    return FileResponse("static/index.html")
 
 @app.post("/upload_pdfs")
 async def upload_pdfs(pdfs: List[UploadFile] = File(...)) -> dict:
