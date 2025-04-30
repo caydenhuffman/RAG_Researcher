@@ -61,7 +61,7 @@ You’ll see the RAG Researcher interface.
 
 ## 💻 How to Use the Application
 
-1. **Upload one or more PDFs** using the file input.
+1. **Upload one or more PDFs** using the file input. (For testing I used pdfs from lectures)
 2. Click **"Create Embeddings"** to process and embed the text.
 3. Enter a **question** related to the PDFs.
 4. Select the number of chunks to retrieve and whether to include full prompt formatting.
